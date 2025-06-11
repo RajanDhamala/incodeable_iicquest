@@ -6,3 +6,20 @@
     }
   }
 }
+
+
+// {
+//   {
+//   "userID": "user1234",
+//   "profilePicture": "https://example.com/images/user123.jpg",
+//   "name": "John Doe",
+//   "email": "johnssaddoe@example.com",
+//   "address": "123 Main Street, Springfield",
+//   "skills": "Python, Django, REST APIs, JavaScript",
+//   "dateOfBirth": "1990-04-15",
+//   "description": "Experienced full-stack developer with a focus on backend systems.",
+//   "phoneNumber": "+1234567890",
+//   "userType": "developer",
+//   "idCard": "https://example.com/idcards/user123.png"
+// }
+// }
