@@ -1,36 +1,21 @@
 import React, { useState } from 'react'
 import { useUser } from '@clerk/clerk-react'
-import { Upload, User, Phone, MapPin, Camera, Check, AlertCircle, Calendar, FileText } from 'lucide-react'
+import { Upload, User, Phone, MapPin, Camera, Check, AlertCircle, Calendar, FileText, X, Plus } from 'lucide-react'
+import axios from 'axios'
 
 function RegisterUser() {
   const { user } = useUser()
-  const [formData, setFormData] = useState({
-    name: user?.fullName || '',
-    phone: user?.phoneNumbers?.[0]?.phoneNumber || '',
-    userType: '',
-    address: '',
-    dateOfBirth: '',
-    description: '',
-    profilePicture: null
+  
+  const [formData, setFormData] = useState({name: user?.fullName || '',phone: user?.phoneNumbers?.[0]?.phoneNumber || '',userType: '',address: '',dateOfBirth: '',description: '',profilePicture: null,skills: []
   })
   const [imagePreview, setImagePreview] = useState(user?.imageUrl || null)
   const [isUploading, setIsUploading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState({})
+  const [skillInput, setSkillInput] = useState('')
 
-  const userTypes = [
-    'Teacher',
-    'Student', 
-    'House Wife',
-    'Business Owner',
-    'Professional',
-    'Freelancer',
-    'Retired',
-    'Job Seeker',
-    'Developer',
-    'Other'
+  const userTypes = ['Teacher','Student', 'House Wife','Business Owner','Professional','Freelancer','Retired','Job Seeker','Developer','Other'
   ]
-
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({
@@ -43,6 +28,28 @@ function RegisterUser() {
         [name]: ''
       }))
     }
+  }
+
+  const handleSkillInput = (e) => {
+    if (e.key === 'Enter' && skillInput.trim()) {
+      e.preventDefault()
+      const newSkill = skillInput.trim()
+      if (!formData.skills.includes(newSkill)) {
+        setFormData(prev => ({
+          ...prev,
+          skills: [...prev.skills, newSkill]
+        }))
+      }
+      
+      setSkillInput('')
+    }
+  }
+
+  const removeSkill = (skillToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.filter(skill => skill !== skillToRemove)
+    }))
   }
 
   const handleImageUpload = async (e) => {
@@ -76,7 +83,6 @@ function RegisterUser() {
       reader.onload = (e) => setImagePreview(e.target.result)
       reader.readAsDataURL(file)
 
-      // Upload to Cloudinary
       const cloudinaryFormData = new FormData()
       cloudinaryFormData.append('file', file)
       cloudinaryFormData.append('upload_preset', import.meta.env.VITE_PUBLIC_CLOUDINARY_UPLOAD_PRESET) 
@@ -142,7 +148,6 @@ function RegisterUser() {
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     
@@ -150,9 +155,7 @@ function RegisterUser() {
 
     setIsSubmitting(true)
 
-    try {
-      // Prepare data to send to backend
-      const submitData = {
+    try {      const submitData = {
         userID: user?.id,
         email: user?.emailAddresses?.[0]?.emailAddress,
         name: formData.name,
@@ -161,28 +164,26 @@ function RegisterUser() {
         address: formData.address,
         dateOfBirth: formData.dateOfBirth,
         description: formData.description,
-        profilePicture: formData.profilePicture
+        profilePicture: formData.profilePicture,
+        skills: formData.skills
       }
-
-      // Send data to backend
-      const response = await fetch(`${import.meta.env.VITE_BASE_URL}/createprofie/`, {
-        method: 'POST',
-        headers: {
+      const response = await axios.post('/api/createprofile/', submitData, {
+        headers: { 
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(submitData)
+        withCredentials: false,
+        timeout: 10000, 
       })
 
-      if (response.ok) {
-        console.log('User registered successfully')
-      } else {
-        throw new Error('Registration failed')
+      if (response.status === 200 || response.status === 201) {
+        console.log('User registered successfully', response.data)
+    
       }
     } catch (error) {
       console.error('Registration error:', error)
       setErrors(prev => ({
         ...prev,
-        submit: 'Registration failed. Please try again.'
+        submit: error.response?.data?.message || 'Registration failed. Please try again.'
       }))
     } finally {
       setIsSubmitting(false)
@@ -382,9 +383,7 @@ function RegisterUser() {
                     {errors.address}
                   </p>
                 )}
-              </div>
-
-              {/* Description */}
+              </div>              {/* Description */}
               <div className="sm:col-span-2">
                 <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
                   About Yourself
@@ -409,6 +408,49 @@ function RegisterUser() {
                     {errors.description}
                   </p>
                 )}
+              </div>              {/* Skills */}
+              <div className="sm:col-span-2">
+                <label htmlFor="skills" className="block text-sm font-medium text-gray-700 mb-2">
+                  Skills
+                </label>
+                
+                {/* Skills Display */}
+                {formData.skills.length > 0 && (
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {formData.skills.map((skill, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200"
+                      >
+                        #{skill}
+                        <button
+                          type="button"
+                          onClick={() => removeSkill(skill)}
+                          className="ml-2 w-4 h-4 rounded-full bg-blue-200 hover:bg-blue-300 flex items-center justify-center transition-colors"
+                        >
+                          <X className="w-2.5 h-2.5 text-blue-600" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="relative">
+                  <Plus className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    id="skills"
+                    value={skillInput}
+                    onChange={(e) => setSkillInput(e.target.value)}
+                    onKeyDown={handleSkillInput}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    placeholder="Type a skill and press Enter (e.g., Django, React, Python)"
+                  />
+                </div>
+                
+                <p className="mt-1 text-sm text-gray-500">
+                  Type your skills and press Enter to add them. Click the × to remove.
+                </p>
               </div>
             </div>
 
