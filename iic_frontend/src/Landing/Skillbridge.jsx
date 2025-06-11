@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Facebook, Instagram, Linkedin, MessageCircle } from "lucide-react";
+import axios from "axios";
 
 export default function SkillBridgeForm() {
   const [formData, setFormData] = useState({
@@ -18,12 +19,28 @@ export default function SkillBridgeForm() {
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log(formData);
-    setSubmitted(true);
-    setFormData({ fullName: "", email: "", interest: "" });
-  };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+     console.log("formdata",formData)
+    const response = await axios.post('/api/LandingForm/', formData, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+   
+    if (response.status === 201 || response.status === 200) {
+      setSubmitted(true);
+      setFormData({ fullName: "", email: "", interest: "" });
+    } else {
+      console.error("Unexpected response:", response);
+    }
+  } catch (error) {
+    console.error("Error submitting the form:", error);
+  }
+};
+
 
   return (
     <section className="py-12 px-6 md:px-[110px] bg-gray-50">
