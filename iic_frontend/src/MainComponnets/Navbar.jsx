@@ -1,28 +1,48 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { Menu, X, HandHeart, User, LogOut, Home, Zap, HelpCircle, Users, UserCircle } from "lucide-react"
-import { SignInButton, SignOutButton, useUser,UserButton } from "@clerk/clerk-react"
+import {Menu,X,HandHeart,User,LogOut,Home,Zap,HelpCircle,Users,UserCircle,MessageCircle,Briefcase,} from "lucide-react"
+import {SignInButton,SignOutButton,useUser,UserButton,
+} from "@clerk/clerk-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import useUserStore from "@/Zustand/UserStore"
 
 function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { user, isSignedIn, isLoaded } = useUser()
   const location = useLocation()
+  const { userType } = useUserStore((state) => state)
 
-  const navLinks = [
-    { href: "/", label: "Home", icon: Home },
-    { href: "/features", label: "Features", icon: Zap },
-    { href: "/how-it-works", label: "How It Works", icon: HelpCircle },
-    { href: "/community", label: "Community", icon: Users },
-    { href: "/profile", label: "Profile", icon: UserCircle },
-  ]
-  const isActiveLink = (href) => {
-    return location.pathname === href
-  }
+  const isActiveLink = (href) => location.pathname === href
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
+  }
+
+  // Base links
+  let navLinks = [
+   
+  ]
+
+  // Conditional links based on userType
+  if (userType === "student") {
+    console.log(userType, "typehaaaai")
+    navLinks.push(
+      { href: "/latestTrends", label: "Tech Trends", icon: Zap },
+      { href: "/chat", label: "Chat", icon: MessageCircle },
+      { href: "/posts", label: "Jobs", icon: Briefcase }
+    )
+  } else if (userType === "housewife") {
+    navLinks.push(
+      { href: "/chat", label: "Chat", icon: MessageCircle },
+      { href: "/services", label: "Services", icon: HelpCircle }
+    )
+  } else if (userType === "college") {
+    navLinks.push(
+      { href: "/vaccancy-post", label: "Post Job", icon: Briefcase },
+      { href: "/chat", label: "Chat", icon: MessageCircle },
+      { href: "/posts", label: "View Jobs", icon: Users }
+    )
   }
 
   return (
@@ -31,10 +51,10 @@ function Navbar() {
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center space-x-2 group">
-              <div className="w-9 h-9 bg-gradient-to-r from-orange-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+              <div className="w-9 h-9 bg-gradient-to-r from-blue-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg transition-shadow">
                 <HandHeart className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-gray-900 group-hover:text-orange-500 transition-colors">
+              <span className="text-xl font-bold text-gray-900 transition-colors">
                 SkillBridge
               </span>
             </Link>
@@ -49,8 +69,8 @@ function Navbar() {
                     className={cn(
                       "flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-white/50",
                       isActiveLink(link.href)
-                        ? "text-orange-600 bg-orange-50/80 shadow-sm"
-                        : "text-gray-600 hover:text-orange-500",
+                        ? "text-green-600 bg-orange-50/80 shadow-sm"
+                        : "text-g-600 hover:text-green-500"
                     )}
                   >
                     <Icon className="w-4 h-4" />
@@ -60,14 +80,13 @@ function Navbar() {
               })}
             </nav>
 
-            {/* Desktop Auth */}
             <div className="hidden lg:flex items-center space-x-3">
               {!isLoaded ? (
                 <div className="w-24 h-9 rounded-lg bg-gray-200/50 animate-pulse" />
               ) : isSignedIn ? (
                 <div className="flex items-center space-x-3">
                   <div className="flex items-center space-x-2 px-3 py-1.5 bg-white/50 rounded-lg">
-                  <UserButton/>
+                    <UserButton />
                   </div>
                   <SignOutButton>
                     <Button
@@ -89,7 +108,6 @@ function Navbar() {
               )}
             </div>
 
-        
             <button
               onClick={toggleMenu}
               className="lg:hidden p-2 rounded-lg text-gray-600 hover:text-orange-500 hover:bg-white/50 transition-all"
@@ -108,7 +126,6 @@ function Navbar() {
             onClick={() => setIsMenuOpen(false)}
           />
 
-          {/* Mobile Menu */}
           <div className="fixed top-0 right-0 bottom-0 w-80 bg-white/95 backdrop-blur-xl shadow-2xl z-50 lg:hidden transform transition-transform duration-300 ease-out">
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <div className="flex items-center space-x-3">
@@ -126,7 +143,6 @@ function Navbar() {
               </button>
             </div>
 
-            {/* Navigation Links */}
             <nav className="p-6 space-y-2">
               {navLinks.map((link) => {
                 const Icon = link.icon
@@ -139,24 +155,29 @@ function Navbar() {
                       "flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-medium transition-all duration-200",
                       isActiveLink(link.href)
                         ? "text-orange-600 bg-gradient-to-r from-orange-50 to-teal-50 shadow-sm border border-orange-100"
-                        : "text-gray-700 hover:text-orange-500 hover:bg-gray-50",
+                        : "text-gray-700 hover:text-orange-500 hover:bg-gray-50"
                     )}
                   >
-                    <Icon className={cn("w-5 h-5", isActiveLink(link.href) ? "text-orange-500" : "text-gray-400")} />
+                    <Icon
+                      className={cn(
+                        "w-5 h-5",
+                        isActiveLink(link.href) ? "text-orange-500" : "text-gray-400"
+                      )}
+                    />
                     <span>{link.label}</span>
-                    {isActiveLink(link.href) && <div className="ml-auto w-2 h-2 bg-orange-500 rounded-full" />}
+                    {isActiveLink(link.href) && (
+                      <div className="ml-auto w-2 h-2 bg-orange-500 rounded-full" />
+                    )}
                   </Link>
                 )
               })}
             </nav>
 
-            {/* Mobile Auth Section */}
             <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-100 bg-gray-50/50">
               {!isLoaded ? (
                 <div className="w-full h-12 rounded-xl bg-gray-200 animate-pulse" />
               ) : isSignedIn ? (
                 <div className="space-y-4">
-                  {/* User Info */}
                   <div className="flex items-center space-x-3 p-3 bg-white rounded-xl shadow-sm">
                     {user?.imageUrl && (
                       <img
@@ -166,14 +187,20 @@ function Navbar() {
                       />
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{user?.fullName || "User"}</p>
-                      <p className="text-xs text-gray-500 truncate">{user?.primaryEmailAddress?.emailAddress}</p>
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {user?.fullName || "User"}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {user?.primaryEmailAddress?.emailAddress}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Sign Out Button */}
                   <SignOutButton>
-                    <Button variant="outline" className="w-full border-red-200 text-red-600 hover:bg-red-50 bg-white">
+                    <Button
+                      variant="outline"
+                      className="w-full border-red-200 text-red-600 hover:bg-red-50 bg-white"
+                    >
                       <LogOut className="w-4 h-4 mr-2" />
                       Sign Out
                     </Button>
@@ -192,7 +219,6 @@ function Navbar() {
         </>
       )}
 
-      {/* Spacer for fixed header */}
       <div className="h-16" />
     </>
   )
