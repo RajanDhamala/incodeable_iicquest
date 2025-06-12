@@ -19,12 +19,12 @@ const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_KEY;
 console.log(PUBLISHABLE_KEY)
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
+ 
     <QueryClientProvider client={queryClient}>
       <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
            <App />
       </ClerkProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
-  </StrictMode>,
+ ,
 )

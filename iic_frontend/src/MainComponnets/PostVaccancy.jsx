@@ -114,7 +114,7 @@ export default function PostVaccancy() {
         userID: user.id,
         jobTitle: formData.jobTitle,
         jobDescription: formData.jobDescription,
-        skills: formData.skills,
+        skillsRequired: formData.skills,
         location: formData.location,
         salaryRange: formData.salaryRange,
         poster: formData.poster,
@@ -147,15 +147,18 @@ export default function PostVaccancy() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
-        <Card className="w-full max-w-md text-center">
-          <CardContent className="pt-6">
-            <div className="w-16 h-16 bg-green-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <Briefcase className="h-8 w-8 text-green-600" />
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+        <Card className="w-full max-w-md text-center shadow-xl transform transition-all duration-300 hover:scale-105">
+          <CardContent className="pt-8 pb-6">
+            <div className="w-20 h-20 bg-green-100 rounded-full mx-auto mb-6 flex items-center justify-center animate-bounce">
+              <Briefcase className="h-10 w-10 text-green-600" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Job Posted Successfully!</h2>
-            <p className="text-gray-600 mb-6">Your job posting is now live.</p>
-            <Button onClick={() => setSuccess(false)} className="w-full">
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Job Posted Successfully!</h2>
+            <p className="text-gray-600 mb-8 text-lg">Your job posting is now live and ready for candidates.</p>
+            <Button 
+              onClick={() => setSuccess(false)} 
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 rounded-lg transition-all duration-300 hover:shadow-lg"
+            >
               Post Another Job
             </Button>
           </CardContent>
@@ -165,38 +168,98 @@ export default function PostVaccancy() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-2xl mx-auto px-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center text-2xl">
-              <Briefcase className="h-6 w-6 mr-2 text-blue-600" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Card className="shadow-2xl border-0">
+          <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg py-4">
+            <CardTitle className="flex items-center text-2xl font-bold">
+              <Briefcase className="h-6 w-6 mr-2" />
               Post a New Job
             </CardTitle>
+            <p className="text-blue-100 mt-1 text-sm">Fill in the details below to create your job posting</p>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <CardContent className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Job Title */}
+                <div className="transform transition-all duration-300 hover:scale-[1.01]">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    <Briefcase className="h-4 w-4 inline mr-1 text-blue-600" />
+                    Job Title
+                  </label>
+                  <input
+                    type="text"
+                    name="jobTitle"
+                    value={formData.jobTitle}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    placeholder="e.g. Senior Software Engineer"
+                  />
+                </div>
 
-              {/* Job Title */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Briefcase className="h-4 w-4 inline mr-1" />
-                  Job Title
-                </label>
-                <input
-                  type="text"
-                  name="jobTitle"
-                  value={formData.jobTitle}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
-                />
+                {/* Location */}
+                <div className="transform transition-all duration-300 hover:scale-[1.01]">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    <MapPin className="h-4 w-4 inline mr-1 text-blue-600" />
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    placeholder="e.g. New York, NY or Remote"
+                  />
+                </div>
+
+                {/* Salary Range Dropdown */}
+                <div className="transform transition-all duration-300 hover:scale-[1.01]">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    <DollarSign className="h-4 w-4 inline mr-1 text-blue-600" />
+                    Salary Range
+                  </label>
+                  <select
+                    name="salaryRange"
+                    value={formData.salaryRange}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white"
+                  >
+                    <option value="negotiable">Negotiable</option>
+                    <option value="0-5 LPA">0 - 5 LPA</option>
+                    <option value="5-10 LPA">5 - 10 LPA</option>
+                    <option value="10-20 LPA">10 - 20 LPA</option>
+                    <option value="20-50 LPA">20 - 50 LPA</option>
+                    <option value="50+ LPA">50+ LPA</option>
+                  </select>
+                </div>
+
+                {/* Job Type */}
+                <div className="transform transition-all duration-300 hover:scale-[1.01]">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    <Clock className="h-4 w-4 inline mr-1 text-blue-600" />
+                    Job Type
+                  </label>
+                  <select
+                    name="jobType"
+                    value={formData.jobType}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white"
+                  >
+                    <option value="full-time">Full Time</option>
+                    <option value="part-time">Part Time</option>
+                    <option value="contract">Contract</option>
+                    <option value="internship">Internship</option>
+                  </select>
+                </div>
               </div>
 
               {/* Job Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <FileText className="h-4 w-4 inline mr-1" />
+              <div className="transform transition-all duration-300 hover:scale-[1.01]">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <FileText className="h-4 w-4 inline mr-1 text-blue-600" />
                   Job Description
                 </label>
                 <textarea
@@ -205,14 +268,15 @@ export default function PostVaccancy() {
                   onChange={handleInputChange}
                   required
                   rows={4}
-                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  placeholder="Describe the role, responsibilities, and requirements..."
                 />
               </div>
 
               {/* Skills */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Users className="h-4 w-4 inline mr-1" />
+              <div className="transform transition-all duration-300 hover:scale-[1.01]">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <Users className="h-4 w-4 inline mr-1 text-blue-600" />
                   Skills Required
                 </label>
                 <input
@@ -220,7 +284,7 @@ export default function PostVaccancy() {
                   value={skillInput}
                   onChange={(e) => setSkillInput(e.target.value)}
                   onKeyDown={handleSkillInput}
-                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                   placeholder="Type a skill and press Enter"
                 />
                 {formData.skills.length > 0 && (
@@ -228,13 +292,13 @@ export default function PostVaccancy() {
                     {formData.skills.map((skill, index) => (
                       <span
                         key={index}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 border"
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border border-blue-200 shadow-sm"
                       >
                         #{skill}
                         <button
                           type="button"
                           onClick={() => removeSkill(skill)}
-                          className="ml-2 bg-blue-200 hover:bg-blue-300 rounded-full p-1"
+                          className="ml-2 bg-white hover:bg-blue-50 rounded-full p-1 transition-colors duration-200"
                         >
                           <X className="w-3 h-3 text-blue-600" />
                         </button>
@@ -244,90 +308,67 @@ export default function PostVaccancy() {
                 )}
               </div>
 
-              {/* Location */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <MapPin className="h-4 w-4 inline mr-1" />
-                  Location
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Salary Range Dropdown */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <DollarSign className="h-4 w-4 inline mr-1" />
-                  Salary Range
-                </label>
-                <select
-                  name="salaryRange"
-                  value={formData.salaryRange}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="negotiable">Negotiable</option>
-                  <option value="0-5 LPA">0 - 5 LPA</option>
-                  <option value="5-10 LPA">5 - 10 LPA</option>
-                  <option value="10-20 LPA">10 - 20 LPA</option>
-                  <option value="20-50 LPA">20 - 50 LPA</option>
-                  <option value="50+ LPA">50+ LPA</option>
-                </select>
-              </div>
-
-              {/* Job Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Clock className="h-4 w-4 inline mr-1" />
-                  Job Type
-                </label>
-                <select
-                  name="jobType"
-                  value={formData.jobType}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="full-time">Full Time</option>
-                  <option value="part-time">Part Time</option>
-                  <option value="contract">Contract</option>
-                  <option value="internship">Internship</option>
-                </select>
-              </div>
-
               {/* Poster Upload */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Upload className="h-4 w-4 inline mr-1" />
+              <div className="transform transition-all duration-300 hover:scale-[1.01]">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <Upload className="h-4 w-4 inline mr-1 text-blue-600" />
                   Job Poster (Optional)
                 </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
-                />
-                {uploading && <p className="text-sm text-blue-600 mt-1">Uploading...</p>}
+                <div className="mt-1 flex justify-center px-4 pt-4 pb-4 border-2 border-gray-200 border-dashed rounded-lg hover:border-blue-500 transition-colors duration-300">
+                  <div className="space-y-1 text-center">
+                    <Upload className="mx-auto h-8 w-8 text-gray-400" />
+                    <div className="flex text-sm text-gray-600">
+                      <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                        <span>Upload a file</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="sr-only"
+                        />
+                      </label>
+                      <p className="pl-1">or drag and drop</p>
+                    </div>
+                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+                  </div>
+                </div>
+                {uploading && (
+                  <div className="mt-2 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <span className="ml-2 text-sm text-blue-600">Uploading...</span>
+                  </div>
+                )}
                 {formData.poster && (
-                  <div className="mt-2">
-                    <img
-                      src={formData.poster}
-                      alt="Job poster"
-                      className="w-32 h-32 object-cover border rounded-md"
-                    />
+                  <div className="mt-2 flex justify-center">
+                    <div className="relative group">
+                      <img
+                        src={formData.poster}
+                        alt="Job poster"
+                        className="w-32 h-32 object-cover rounded-lg shadow-lg transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, poster: "" }))}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
 
               {/* Error */}
               {error && (
-                <div className="bg-red-100 border border-red-300 text-red-700 p-2 rounded">
-                  {error}
+                <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded-lg animate-shake">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <X className="h-4 w-4 text-red-500" />
+                    </div>
+                    <div className="ml-2">
+                      <p className="text-sm text-red-700">{error}</p>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -335,9 +376,16 @@ export default function PostVaccancy() {
               <Button
                 type="submit"
                 disabled={loading || uploading}
-                className="w-full bg-blue-600 hover:bg-blue-700"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? "Posting Job..." : "Post Job"}
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Posting Job...
+                  </div>
+                ) : (
+                  "Post Job"
+                )}
               </Button>
             </form>
           </CardContent>

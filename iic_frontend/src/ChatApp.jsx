@@ -1,21 +1,22 @@
-"use client"
-
 import { useState, useRef, useEffect } from "react"
 import { useUser } from "@clerk/clerk-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import {Plus,Users,MessageCircle,Search,Settings,X,Send,Loader2,Smile,ImageIcon,ChevronLeft,Info,Bell,Menu,User,Check,Phone,Video,AlertCircle,
+import {Plus,Users,MessageCircle,Search,Settings,X,Send,Loader2,Smile,ImageIcon,ChevronLeft,Info,Bell,Menu,User,Check,Phone,Video,AlertCircle,UserPlus,
 } from "lucide-react"
 import axios from "axios"
+import { useNavigate } from "react-router-dom"
 
 function ChatApp() {
   const { user, loading } = useUser()
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedGroup, setSelectedGroup] = useState(null)
   const [messageText, setMessageText] = useState("")
   const [showMobileSidebar, setShowMobileSidebar] = useState(false)
   const [imageToUpload, setImageToUpload] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
+  const [newMemberUserId, setNewMemberUserId] = useState("")
   const messagesEndRef = useRef(null)
   const fileInputRef = useRef(null)
   const [newGroup, setNewGroup] = useState({
@@ -24,6 +25,11 @@ function ChatApp() {
   })
 
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
+
+  function webrtc() {
+    navigate("/call")
+  }
 
   const {
     data: groups = [],
@@ -46,11 +52,10 @@ function ChatApp() {
       }
     },
     enabled: !!user?.id,
-    staleTime: 30000, // 30 seconds
+    staleTime: 30000,
     retry: 1,
   })
 
-  
   const {
     data: messages = [],
     isLoading: messagesLoading,
@@ -60,10 +65,10 @@ function ChatApp() {
     queryFn: async () => {
       if (!selectedGroup?.id) return []
       try {
-        const response = await axios.post("http://192.168.42.169:8000/groupchat/", {
+        const response = await axios.post("api/getgroupchat/", {
           groupID: selectedGroup.id,
         })
-        
+
         const messagesData = response.data?.data || []
         return Array.isArray(messagesData) ? messagesData : []
       } catch (error) {
@@ -76,40 +81,6 @@ function ChatApp() {
     staleTime: 3000,
     retry: 1,
   })
-
-  // Handle image selection
-  const handleImageSelect = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-
-    if (!file.type.startsWith("image/")) {
-      alert("Please select a valid image file")
-      return
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image size must be less than 5MB")
-      return
-    }
-
-    setImageToUpload(file)
-
-    // Create preview
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      setImagePreview(e.target.result)
-    }
-    reader.readAsDataURL(file)
-  }
-
-  // Cancel image upload
-  const cancelImageUpload = () => {
-    setImageToUpload(null)
-    setImagePreview(null)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""
-    }
-  }
 
   const sendMessageMutation = useMutation({
     mutationFn: async (messageData) => {
@@ -127,7 +98,6 @@ function ChatApp() {
         })
         return response.data
       } else {
-        // Regular text message
         const response = await axios.post("api/groupchat/", {
           groupID: messageData.groupID,
           sender: user.id,
@@ -152,7 +122,6 @@ function ChatApp() {
     },
   })
 
-  // Create group mutation
   const createGroupMutation = useMutation({
     mutationFn: async (groupData) => {
       const response = await axios.post("/api/creategroup/", {
@@ -173,10 +142,28 @@ function ChatApp() {
     },
   })
 
+  const addMemberMutation = useMutation({
+    mutationFn: async (memberData) => {
+      const response = await axios.post("api/addgroupmember/", {
+        groupID: memberData.groupID,
+        userID: memberData.userID,
+      })
+      return response.data
+    },
+    onSuccess: () => {
+      setShowAddMemberModal(false)
+      setNewMemberUserId("")
+      alert("Member added successfully!")
+    },
+    onError: (error) => {
+      console.error("Error adding member:", error)
+      alert("Failed to add member. Please check the User ID and try again.")
+    },
+  })
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
-
 
   useEffect(() => {
     if (selectedGroup && showMobileSidebar) {
@@ -191,6 +178,22 @@ function ChatApp() {
       return
     }
     createGroupMutation.mutate(newGroup)
+  }
+
+  const handleAddMember = (e) => {
+    e.preventDefault()
+    if (!newMemberUserId.trim()) {
+      alert("User ID is required")
+      return
+    }
+    if (!selectedGroup?.id) {
+      alert("No group selected")
+      return
+    }
+    addMemberMutation.mutate({
+      groupID: selectedGroup.id,
+      userID: newMemberUserId.trim(),
+    })
   }
 
   const handleInputChange = (e) => {
@@ -208,13 +211,13 @@ function ChatApp() {
     sendMessageMutation.mutate({
       groupID: selectedGroup.id,
       message: messageText.trim(),
-      image: imageToUpload,
     })
   }
 
   const handleGroupSelect = (group) => {
     setSelectedGroup(group)
   }
+
   const getGroupInitials = (groupName) => {
     if (!groupName) return "G"
     return groupName
@@ -230,6 +233,7 @@ function ChatApp() {
   }
 
   const isMyMessage = (sender) => {
+    console.log("sender:", sender, "user:", user.id)
     return sender === user?.id
   }
 
@@ -292,7 +296,6 @@ function ChatApp() {
               </button>
             </div>
 
-            {/* User Profile Section */}
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">
@@ -308,7 +311,6 @@ function ChatApp() {
               </div>
             </div>
 
-            {/* Search and Create Group */}
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center space-x-2">
                 <div className="relative flex-1">
@@ -331,7 +333,6 @@ function ChatApp() {
               </div>
             </div>
 
-            {/* Groups List */}
             <div className="flex-1 overflow-y-auto">
               {groupsLoading ? (
                 <div className="p-8 text-center">
@@ -408,11 +409,6 @@ function ChatApp() {
                             <Users className="w-3 h-3 text-gray-400 mr-1" />
                             <span className="text-xs text-gray-400">{group.memberCount || 0} members</span>
                           </div>
-                          {Math.random() > 0.5 && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {Math.floor(Math.random() * 5) + 1} new
-                            </span>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -420,36 +416,13 @@ function ChatApp() {
                 </div>
               )}
             </div>
-
-            {/* Navigation Tabs */}
-            <div className="border-t border-gray-200 p-2 bg-white">
-              <div className="flex items-center justify-around">
-                <button className="p-3 rounded-xl text-blue-600 hover:bg-blue-50 transition-colors flex flex-col items-center">
-                  <MessageCircle className="w-6 h-6" />
-                  <span className="text-xs mt-1">Chats</span>
-                </button>
-                <button className="p-3 rounded-xl text-gray-500 hover:bg-gray-50 transition-colors flex flex-col items-center">
-                  <Users className="w-6 h-6" />
-                  <span className="text-xs mt-1">Groups</span>
-                </button>
-                <button className="p-3 rounded-xl text-gray-500 hover:bg-gray-50 transition-colors flex flex-col items-center">
-                  <Bell className="w-6 h-6" />
-                  <span className="text-xs mt-1">Alerts</span>
-                </button>
-                <button className="p-3 rounded-xl text-gray-500 hover:bg-gray-50 transition-colors flex flex-col items-center">
-                  <User className="w-6 h-6" />
-                  <span className="text-xs mt-1">Profile</span>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
 
-        {/* Main Chat Area */}
+     
         <div className="flex-1 flex flex-col h-full">
           {selectedGroup ? (
             <>
-              {/* Chat Header */}
               <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between shadow-sm">
                 <div className="flex items-center">
                   <button
@@ -463,19 +436,20 @@ function ChatApp() {
                   </div>
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">{selectedGroup.groupName}</h2>
-                    <div className="flex items-center">
-                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                      <p className="text-sm text-gray-500">
-                        {selectedGroup.memberCount || 0} members • {Math.floor(Math.random() * 3) + 1} online
-                      </p>
-                    </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 " >
+                  <button
+                    onClick={() => setShowAddMemberModal(true)}
+                    className="p-2 rounded-full hover:bg-green-50 transition-colors group"
+                    title="Add Member"
+                  >
+                    <UserPlus className="w-5 h-5 text-green-600 group-hover:text-green-700" />
+                  </button>
                   <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
                     <Phone className="w-5 h-5 text-gray-600" />
                   </button>
-                  <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                  <button className="p-2 rounded-full hover:bg-gray-100 transition-colors" onClick={webrtc}>
                     <Video className="w-5 h-5 text-gray-600" />
                   </button>
                   <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
@@ -521,7 +495,7 @@ function ChatApp() {
                       </p>
                       <div className="flex justify-center">
                         <button
-                          onClick={() => document.getElementById("message-input").focus()}
+                          onClick={() => document.getElementById("message-input")?.focus()}
                           className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
                         >
                           <Send className="w-4 h-4 mr-2" />
@@ -560,7 +534,6 @@ function ChatApp() {
                             {getUserInitials(message.sender)}
                           </div>
 
-                          {/* Message Bubble */}
                           <div
                             className={`rounded-2xl px-4 py-3 shadow-sm ${
                               isMyMessage(message.sender)
@@ -568,16 +541,6 @@ function ChatApp() {
                                 : "bg-white text-gray-900 rounded-tl-none"
                             }`}
                           >
-                            {/* Message content */}
-                            {message.picture && (
-                              <div className="mb-2 rounded-lg overflow-hidden">
-                                <img
-                                  src={message.picture || "/placeholder.svg"}
-                                  alt="Shared image"
-                                  className="w-full h-auto max-h-60 object-cover"
-                                />
-                              </div>
-                            )}
                             <p className="text-sm">{message.message}</p>
                             <div
                               className={`flex items-center justify-between mt-1 text-xs ${
@@ -600,28 +563,10 @@ function ChatApp() {
                 )}
               </div>
 
-              {/* Image Preview */}
-              {imagePreview && (
-                <div className="bg-gray-100 p-3 border-t border-gray-200">
-                  <div className="relative inline-block">
-                    <img
-                      src={imagePreview || "/placeholder.svg"}
-                      alt="Upload preview"
-                      className="h-20 w-auto rounded-lg object-cover"
-                    />
-                    <button
-                      onClick={cancelImageUpload}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
 
-              {/* Message Input */}
               <div className="bg-white border-t border-gray-200 p-4">
                 <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
+              
                   <div className="flex-1 relative">
                     <input
                       id="message-input"
@@ -632,22 +577,8 @@ function ChatApp() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-24"
                       disabled={sendMessageMutation.isPending}
                     />
+
                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
-                        disabled={sendMessageMutation.isPending}
-                      >
-                        <ImageIcon className="w-5 h-5" />
-                      </button>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageSelect}
-                        className="hidden"
-                      />
                       <button
                         type="button"
                         className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
@@ -694,7 +625,6 @@ function ChatApp() {
         </div>
       </div>
 
-      {/* Create Group Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-auto overflow-hidden">
@@ -702,14 +632,13 @@ function ChatApp() {
               <h3 className="text-xl font-bold text-white">Create New Group</h3>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="p-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                className="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
               >
-                <X className="w-5 h-5 text-white" />
+                <X className="w-6 h-6 text-white" />
               </button>
             </div>
-
             <form onSubmit={handleCreateGroup} className="p-6">
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div>
                   <label htmlFor="groupName" className="block text-sm font-medium text-gray-700 mb-2">
                     Group Name *
@@ -720,12 +649,11 @@ function ChatApp() {
                     name="groupName"
                     value={newGroup.groupName}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter group name"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
                 </div>
-
                 <div>
                   <label htmlFor="groupDescription" className="block text-sm font-medium text-gray-700 mb-2">
                     Description
@@ -735,29 +663,28 @@ function ChatApp() {
                     name="groupDescription"
                     value={newGroup.groupDescription}
                     onChange={handleInputChange}
+                    placeholder="What's this group about?"
                     rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    placeholder="Enter group description (optional)"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   />
                 </div>
               </div>
-
-              <div className="flex justify-end space-x-3 mt-8">
+              <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-5 py-2.5 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={createGroupMutation.isPending}
-                  className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium shadow-md"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                 >
                   {createGroupMutation.isPending ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Creating...
                     </>
                   ) : (
@@ -772,6 +699,109 @@ function ChatApp() {
           </div>
         </div>
       )}
+
+      {/* Add Member Modal */}
+      {showAddMemberModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-auto overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-500 to-emerald-600">
+              <h3 className="text-xl font-bold text-white flex items-center">
+                <UserPlus className="w-6 h-6 mr-2" />
+                Add Member
+              </h3>
+              <button
+                onClick={() => setShowAddMemberModal(false)}
+                className="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
+              >
+                <X className="w-6 h-6 text-white" />
+              </button>
+            </div>
+            <form onSubmit={handleAddMember} className="p-6">
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-semibold text-sm mr-3">
+                      {getGroupInitials(selectedGroup?.groupName)}
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-900">{selectedGroup?.groupName}</h4>
+                      <p className="text-sm text-gray-600">Adding member to this group</p>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="newMemberUserId" className="block text-sm font-medium text-gray-700 mb-2">
+                    User ID *
+                  </label>
+                  <input
+                    type="text"
+                    id="newMemberUserId"
+                    value={newMemberUserId}
+                    onChange={(e) => setNewMemberUserId(e.target.value)}
+                    placeholder="Enter user ID to add"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enter the exact User ID of the person you want to add to this group.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setShowAddMemberModal(false)}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addMemberMutation.isPending}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                >
+                  {addMemberMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Add Member
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Sidebar Overlay */}
+      {showMobileSidebar && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          onClick={() => setShowMobileSidebar(false)}
+        />
+      )}
+
+      {/* Hidden file input for image uploads */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file) {
+            setImageToUpload(file)
+            const reader = new FileReader()
+            reader.onload = (e) => setImagePreview(e.target?.result)
+            reader.readAsDataURL(file)
+          }
+        }}
+      />
     </div>
   )
 }
