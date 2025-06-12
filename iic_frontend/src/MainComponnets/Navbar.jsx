@@ -89,7 +89,7 @@ function Navbar() {
               )}
             </div>
 
-            {/* Mobile Menu Button */}
+        
             <button
               onClick={toggleMenu}
               className="lg:hidden p-2 rounded-lg text-gray-600 hover:text-orange-500 hover:bg-white/50 transition-all"
@@ -101,7 +101,6 @@ function Navbar() {
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
       {isMenuOpen && (
         <>
           <div

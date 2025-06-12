@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 export default function Hero() {
+  const navigate=useNavigate()
   return (
     <section className="w-full py-10 md:py-16 lg:py-10 bg-white">
       <div className="max-w-7xl mx-auto px-4 md:px-10">
@@ -10,7 +12,7 @@ export default function Hero() {
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
               Connecting Every <br />
               <span className="text-[#0070f3]">Skill</span> to <br />
-              <span className="text-[#ff6b00]">Opportunity</span>
+              <span className="text-[#0CD47A]">Opportunity</span>
             </h1>
 
             <p className="text-base md:text-lg text-gray-600 max-w-xl">
@@ -20,20 +22,24 @@ export default function Hero() {
             {/* Buttons */}
             <div className="flex flex-wrap gap-4">
               <Button className="bg-[#0070f3] text-white px-10 py-3 text-md rounded-md hover:bg-blue-600">
-                👤 Join Now
+                Join Now
               </Button>
-              <Button className="bg-[#ff6b00] text-white px-10 py-3 text-md rounded-md hover:bg-orange-600">
-                🧰 Post a Gig
+              <Button className="bg-[#0CD47A] text-white px-10 py-3 text-md rounded-md ">
+                 Post a Gig
               </Button>
             </div>
 
             <div className="flex flex-wrap gap-4">
               <Button variant="outline" className="border-green-500 text-green-600 px-6 py-3 text-sm rounded-md">
-                ✅ Find Internship
+                 Find Internship
               </Button>
-              <Button variant="outline" className="border-blue-500 text-blue-600 px-6 py-3 text-sm rounded-md">
-                🤝 Start Collaboration
-              </Button>
+              <Button
+  variant="outline"
+  className="border-blue-500 text-blue-600 px-6 py-3 text-sm rounded-md"
+  onClick={() => navigate("/chat")}
+>
+  Start Collaboration
+</Button>
             </div>
           </div>
 

@@ -12,7 +12,7 @@ import { Toaster } from "sonner"
 import Trial from "./MainComponnets/trial";
 import ChatApp from "./ChatApp";
 import TestCard from "./TestCard";
-import VideoCall from "./VideoCall";
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -71,7 +71,7 @@ function App() {
                 <Route path="/posts" element={<JobApplication/>} />
                 <Route path="/chat" element={<ChatApp/>} />
                 <Route path="/test" element={<TestCard/>} />
-                 <Route path="/call" element={<VideoCall/>} />
+             
           </Routes>
         </Suspense>
       </BrowserRouter>

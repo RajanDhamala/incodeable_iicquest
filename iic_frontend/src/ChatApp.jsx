@@ -22,15 +22,22 @@ function ChatApp() {
   const [newGroup, setNewGroup] = useState({
     groupName: "",
     groupDescription: "",
-  })
+  });
+  const [globalMessage, setglobalMessage] = useState();
+  const [selectedUserId, setSelectedUserId] = useState(null)
 
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+   const [isOpen, setIsOpen] = useState(false);
+
 
   function webrtc() {
     navigate("/call")
   }
 
+  const handelDbcall=(user)=>{
+        console.log(user)
+  }
   const {
     data: groups = [],
     isLoading: groupsLoading,
@@ -45,6 +52,8 @@ function ChatApp() {
         })
         console.log("API Response:", response.data)
         const groupsData = response.data?.data || []
+  
+
         return Array.isArray(groupsData) ? groupsData : []
       } catch (error) {
         console.error("Error fetching groups:", error)
@@ -55,21 +64,28 @@ function ChatApp() {
     staleTime: 30000,
     retry: 1,
   })
-
   const {
     data: messages = [],
     isLoading: messagesLoading,
     error: messagesError,
   } = useQuery({
-    queryKey: ["messages", selectedGroup?.id],
+    queryKey: ["messages", selectedGroup?.id, selectedUserId],
     queryFn: async () => {
       if (!selectedGroup?.id) return []
       try {
-        const response = await axios.post("api/getgroupchat/", {
+        const requestBody = {
           groupID: selectedGroup.id,
-        })
+        }
+      
+        if (selectedUserId) {
+          requestBody.userID = selectedUserId
+        }
+        
+        const response = await axios.post("api/getgroupchat/", requestBody)
 
         const messagesData = response.data?.data || []
+        const groupUsersData = response.data?.groupUsers;
+        setglobalMessage(groupUsersData);
         return Array.isArray(messagesData) ? messagesData : []
       } catch (error) {
         console.error("Error fetching messages:", error)
@@ -77,50 +93,75 @@ function ChatApp() {
       }
     },
     enabled: !!selectedGroup?.id,
-    refetchInterval: 5000,
+    refetchInterval: 3000,
     staleTime: 3000,
     retry: 1,
   })
 
   const sendMessageMutation = useMutation({
-    mutationFn: async (messageData) => {
-      if (messageData.image) {
-        const formData = new FormData()
-        formData.append("groupID", messageData.groupID)
-        formData.append("sender", user.id)
-        formData.append("message", messageData.message)
-        formData.append("picture", messageData.image)
+  mutationFn: async (messageData) => {
+    if (messageData.image) {
+      const formData = new FormData();
+      formData.append("groupID", messageData.groupID);
+      formData.append("sender", user.id);
+      formData.append("message", messageData.message);
+      formData.append("picture", messageData.image);
 
-        const response = await axios.post("api/groupchat/", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        })
-        return response.data
-      } else {
-        const response = await axios.post("api/groupchat/", {
-          groupID: messageData.groupID,
-          sender: user.id,
-          message: messageData.message,
-          picture: false,
-        })
-        return response.data
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["messages", selectedGroup?.id])
-      setMessageText("")
-      setImageToUpload(null)
-      setImagePreview(null)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ""
-      }
-    },
-    onError: (error) => {
-      console.error("Error sending message:", error)
-      alert("Failed to send message. Please try again.")
-    },
-  })
+      const response = await axios.post("api/groupchat/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } else {
+      const response = await axios.post("api/groupchat/", {
+        groupID: messageData.groupID,
+        sender: user.id,
+        message: messageData.message,
+        picture: false,
+      });
+      return response.data;
+    }
+  },
+
+  onMutate: async (messageData) => {
+    const groupID = messageData.groupID;
+
+    await queryClient.cancelQueries(["messages", groupID]);
+
+    const previousMessages = queryClient.getQueryData(["messages", groupID]);
+
+    const optimisticMessage = {
+      id: `temp-${Date.now()}`,
+      groupID,
+      sender: user.id,
+      message: messageData.message,
+      picture: messageData.image ? URL.createObjectURL(messageData.image) : null,
+      timestamp: new Date().toISOString(),
+      optimistic: true,
+    };
+
+    queryClient.setQueryData(["messages", groupID], (old = []) => [
+      ...old,
+      optimisticMessage,
+    ]);
+    setMessageText("");
+    return { previousMessages };
+  },
+
+  onError: (error, _data, context) => {
+    if (context?.previousMessages) {
+      queryClient.setQueryData(["messages", _data.groupID], context.previousMessages);
+    }
+    console.error("Error sending message:", error);
+    alert("Failed to send message. Please try again.");
+  },
+
+  onSettled: (_data, _error, variables) => {
+    queryClient.invalidateQueries(["messages", variables.groupID]);
+  },
+});
+
 
   const createGroupMutation = useMutation({
     mutationFn: async (groupData) => {
@@ -207,15 +248,22 @@ function ChatApp() {
   const handleSendMessage = (e) => {
     e.preventDefault()
     if ((!messageText.trim() && !imageToUpload) || !selectedGroup) return
-
+   
+    
     sendMessageMutation.mutate({
       groupID: selectedGroup.id,
       message: messageText.trim(),
     })
   }
-
   const handleGroupSelect = (group) => {
     setSelectedGroup(group)
+    setSelectedUserId(null) 
+    setIsOpen(false) 
+  }
+
+  const handleUserSelect = (userId) => {
+    setSelectedUserId(selectedUserId === userId ? null : userId) 
+    setIsOpen(false) 
   }
 
   const getGroupInitials = (groupName) => {
@@ -233,7 +281,6 @@ function ChatApp() {
   }
 
   const isMyMessage = (sender) => {
-    console.log("sender:", sender, "user:", user.id)
     return sender === user?.id
   }
 
@@ -278,14 +325,13 @@ function ChatApp() {
           </div>
         </div>
 
-        {/* Sidebar - Desktop always visible, Mobile conditional */}
+
         <div
           className={`${
             showMobileSidebar ? "fixed inset-0 z-40 block" : "hidden"
           } lg:relative lg:block lg:w-80 xl:w-96 h-full`}
         >
           <div className="flex flex-col h-full bg-white shadow-lg lg:shadow-none">
-            {/* Mobile Sidebar Header */}
             <div className="lg:hidden flex items-center justify-between p-4 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">Chat Groups</h2>
               <button
@@ -404,12 +450,6 @@ function ChatApp() {
                           <span className="text-xs text-gray-400 whitespace-nowrap ml-2">12:30 PM</span>
                         </div>
                         <p className="text-sm text-gray-500 truncate">{group.groupDescription || "No description"}</p>
-                        <div className="flex items-center justify-between mt-1">
-                          <div className="flex items-center">
-                            <Users className="w-3 h-3 text-gray-400 mr-1" />
-                            <span className="text-xs text-gray-400">{group.memberCount || 0} members</span>
-                          </div>
-                        </div>
                       </div>
                     </div>
                   ))}
@@ -433,12 +473,94 @@ function ChatApp() {
                   </button>
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-semibold text-sm mr-3">
                     {getGroupInitials(selectedGroup.groupName)}
-                  </div>
-                  <div>
+                  </div>                  <div>
                     <h2 className="text-lg font-semibold text-gray-900">{selectedGroup.groupName}</h2>
+                    {selectedUserId && (
+                      <p className="text-sm text-gray-500">
+                        Viewing messages from: {globalMessage?.find(m => m.userID === selectedUserId)?.username || 'Selected User'}
+                      </p>
+                    )}
                   </div>
-                </div>
-                <div className="flex items-center space-x-2 " >
+                </div>                <div className="flex items-center space-x-2">
+                  {/* Group Users Display */}
+                  <div className="flex items-center space-x-1 mr-2">
+                    {globalMessage && globalMessage.length > 0 && (
+                      <div className="flex -space-x-2">
+                        {globalMessage.slice(0, 3).map((member, index) => (
+                          <div
+                            key={member.userID}
+                            className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xs border-2 border-white cursor-pointer hover:scale-110 transition-transform"
+                            title={member.username}
+                            onClick={() => handelDbcall(member)}
+                          >
+                            {member.username.charAt(0).toUpperCase()}
+                          </div>
+                        ))}
+                        {globalMessage.length > 3 && (
+                          <div className="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center text-white font-semibold text-xs border-2 border-white">
+                            +{globalMessage.length - 3}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Options
+                  </button>
+
+                  {isOpen && (
+                    <div className="absolute mt-12 bg-white border border-gray-200 rounded shadow w-60 z-10 right-0">
+                      <div className="py-2">
+                        <div className="px-4 py-2 border-b border-gray-200">
+                          <h4 className="font-medium text-gray-900">Group Members</h4>
+                        </div>                        {globalMessage && globalMessage.length > 0 ? (
+                          globalMessage.map((member) => (
+                            <div
+                              key={member.userID}
+                              className={`flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer ${
+                                selectedUserId === member.userID ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                              }`}
+                              onClick={() => handleUserSelect(member.userID)}
+                            >
+                              <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xs mr-3">
+                                {member.username.charAt(0).toUpperCase()}
+                              </div>
+                              <span className="text-sm text-gray-700">{member.username}</span>
+                              {selectedUserId === member.userID && (
+                                <div className="ml-auto">
+                                  <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="px-4 py-2 text-sm text-gray-500">No members found</div>
+                        )}
+                        <div className="border-t border-gray-200 mt-2">
+                          <button 
+                            className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-700"
+                            onClick={() => {
+                              setSelectedUserId(null) // Clear filter to show all messages
+                              setIsOpen(false)
+                            }}
+                          >
+                            Show All Messages
+                          </button>
+                          <button 
+                            className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-700"
+                            onClick={() => setShowAddMemberModal(true)}
+                          >
+                            Add Member
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <button
                     onClick={() => setShowAddMemberModal(true)}
                     className="p-2 rounded-full hover:bg-green-50 transition-colors group"
@@ -532,14 +654,12 @@ function ChatApp() {
                             }`}
                           >
                             {getUserInitials(message.sender)}
-                          </div>
-
-                          <div
+                          </div>                          <div
                             className={`rounded-2xl px-4 py-3 shadow-sm ${
                               isMyMessage(message.sender)
                                 ? "bg-blue-600 text-white rounded-tr-none"
                                 : "bg-white text-gray-900 rounded-tl-none"
-                            }`}
+                            } ${message.optimistic ? 'opacity-70' : ''}`}
                           >
                             <p className="text-sm">{message.message}</p>
                             <div
@@ -550,7 +670,11 @@ function ChatApp() {
                               <span>{formatTime(message.timestamp)}</span>
                               {isMyMessage(message.sender) && (
                                 <span className="flex items-center">
-                                  <Check className="w-3 h-3 ml-1" />
+                                  {message.optimistic ? (
+                                    <Loader2 className="w-3 h-3 animate-spin ml-1" />
+                                  ) : (
+                                    <Check className="w-3 h-3 ml-1" />
+                                  )}
                                 </span>
                               )}
                             </div>
@@ -626,7 +750,7 @@ function ChatApp() {
       </div>
 
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-gray-50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-auto overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-indigo-600">
               <h3 className="text-xl font-bold text-white">Create New Group</h3>
@@ -786,22 +910,6 @@ function ChatApp() {
         />
       )}
 
-      {/* Hidden file input for image uploads */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0]
-          if (file) {
-            setImageToUpload(file)
-            const reader = new FileReader()
-            reader.onload = (e) => setImagePreview(e.target?.result)
-            reader.readAsDataURL(file)
-          }
-        }}
-      />
     </div>
   )
 }
