@@ -5,6 +5,10 @@ import {Plus,Users,MessageCircle,Search,Settings,X,Send,Loader2,Smile,ImageIcon,
 } from "lucide-react"
 import axios from "axios"
 import { useNavigate } from "react-router-dom"
+import { HiUserGroup } from "react-icons/hi";
+import { MdGroupAdd } from "react-icons/md";
+import { MdMessage } from "react-icons/md";
+
 
 function ChatApp() {
   const { user, loading } = useUser()
@@ -32,7 +36,7 @@ function ChatApp() {
 
 
   function webrtc() {
-    navigate("/call")
+    navigate(`/call/${Math.random()*20}`)
   }
 
   const handelDbcall=(user)=>{
@@ -415,45 +419,47 @@ function ChatApp() {
                   )}
                 </div>
               ) : (
-                <div className="p-2">
-                  {filteredGroups.map((group, index) => (
-                    <div
-                      key={group.id || index}
-                      onClick={() => handleGroupSelect(group)}
-                      className={`flex items-center p-3 rounded-xl cursor-pointer transition-all ${
-                        selectedGroup?.id === group.id
-                          ? "bg-blue-50 border-l-4 border-blue-500"
-                          : "hover:bg-gray-50 border-l-4 border-transparent"
-                      }`}
-                    >
-                      {/* Group Avatar */}
-                      <div
-                        className={`w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center text-white font-semibold text-lg mr-3 flex-shrink-0 ${
-                          selectedGroup?.id === group.id
-                            ? "bg-gradient-to-br from-blue-500 to-indigo-600 ring-2 ring-blue-300"
-                            : "bg-gradient-to-br from-gray-500 to-gray-600"
-                        }`}
-                      >
-                        {getGroupInitials(group.groupName)}
-                      </div>
+               <div className="p-2 space-y-1">
+  {filteredGroups.map((group, index) => (
+    <div
+      key={group.id || index}
+      onClick={() => handleGroupSelect(group)}
+      className={`flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
+        selectedGroup?.id === group.id
+          ? "bg-blue-50 border-blue-200 shadow-sm"
+          : "bg-white border-gray-100 hover:bg-gray-50 hover:border-gray-200 hover:shadow-sm"
+      }`}
+    >
+      {/* Group Avatar - Simple Circle */}
+      <div
+        className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-medium text-sm mr-3 ${
+          selectedGroup?.id === group.id
+            ? "bg-blue-500"
+            : "bg-gray-400"
+        }`}
+      >
+        {getGroupInitials(group.groupName)}
+      </div>
 
-                      {/* Group Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start">
-                          <h3
-                            className={`font-medium truncate ${
-                              selectedGroup?.id === group.id ? "text-blue-900" : "text-gray-900"
-                            }`}
-                          >
-                            {group.groupName || "Unnamed Group"}
-                          </h3>
-                          <span className="text-xs text-gray-400 whitespace-nowrap ml-2">12:30 PM</span>
-                        </div>
-                        <p className="text-sm text-gray-500 truncate">{group.groupDescription || "No description"}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+      {/* Group Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex justify-between items-center">
+          <h3
+            className={`font-medium truncate ${
+              selectedGroup?.id === group.id ? "text-blue-900" : "text-gray-900"
+            }`}
+          >
+            {group.groupName || "Unnamed Group"}
+          </h3>
+          <span className="text-xs text-gray-400 ml-2">12:30 PM</span>
+        </div>
+        <p className="text-sm text-gray-500 truncate mt-0.5">
+          {group.groupDescription || "No description"}
+        </p>
+      </div>
+    </div>
+  ))}
+</div>
               )}
             </div>
           </div>
@@ -471,10 +477,10 @@ function ChatApp() {
                   >
                     <ChevronLeft className="w-5 h-5 text-gray-600" />
                   </button>
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-semibold text-sm mr-3">
-                    {getGroupInitials(selectedGroup.groupName)}
-                  </div>                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">{selectedGroup.groupName}</h2>
+                      <div>
+                 <h2 className="text-xl font-semibold text-gray-900 mb-4">
+  Chatting with: <span className="text-primary">{selectedGroup.groupName}</span>
+</h2>
                     {selectedUserId && (
                       <p className="text-sm text-gray-500">
                         Viewing messages from: {globalMessage?.find(m => m.userID === selectedUserId)?.username || 'Selected User'}
@@ -513,9 +519,9 @@ function ChatApp() {
                   </button>
 
                   {isOpen && (
-                    <div className="absolute mt-12 bg-white border border-gray-200 rounded shadow w-60 z-10 right-0">
+                    <div className="absolute bg-white border border-gray-200 rounded shadow w-60 z-10 right-0 mt-24">
                       <div className="py-2">
-                        <div className="px-4 py-2 border-b border-gray-200">
+                        <div className="px-4 py-2 border-b border-gray-200 ">
                           <h4 className="font-medium text-gray-900">Group Members</h4>
                         </div>                        {globalMessage && globalMessage.length > 0 ? (
                           globalMessage.map((member) => (
@@ -749,159 +755,174 @@ function ChatApp() {
         </div>
       </div>
 
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-gray-50 bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-auto overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-indigo-600">
-              <h3 className="text-xl font-bold text-white">Create New Group</h3>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
-              >
-                <X className="w-6 h-6 text-white" />
-              </button>
-            </div>
-            <form onSubmit={handleCreateGroup} className="p-6">
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="groupName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Group Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="groupName"
-                    name="groupName"
-                    value={newGroup.groupName}
-                    onChange={handleInputChange}
-                    placeholder="Enter group name"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="groupDescription" className="block text-sm font-medium text-gray-700 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    id="groupDescription"
-                    name="groupDescription"
-                    value={newGroup.groupDescription}
-                    onChange={handleInputChange}
-                    placeholder="What's this group about?"
-                    rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  />
-                </div>
+    {showCreateModal && (
+  <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 w-full max-w-md mx-auto overflow-hidden">
+      <div className="flex items-center justify-between p-6 border-b border-gray-100/50">
+        <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2.5">
+          <div className="p-2 bg-blue-500/10 rounded-xl">
+            <HiUserGroup className="w-5 h-5 text-blue-600" />
+          </div>
+          Create New Group
+        </h3>
+        <button
+          onClick={() => setShowCreateModal(false)}
+          className="p-2 rounded-xl hover:bg-gray-100/50 transition-colors duration-200"
+        >
+          <X className="w-5 h-5 text-gray-500" />
+        </button>
+      </div>
+      <form onSubmit={handleCreateGroup} className="p-6">
+        <div className="space-y-5">
+          <div>
+            <label htmlFor="groupName" className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+              <div className="p-1.5 bg-blue-500/10 rounded-lg">
+                <MdGroupAdd className="w-4 h-4 text-blue-600" />
               </div>
-              <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={createGroupMutation.isPending}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                >
-                  {createGroupMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create Group
-                    </>
-                  )}
-                </button>
+              Group Name
+            </label>
+            <input
+              type="text"
+              id="groupName"
+              name="groupName"
+              value={newGroup.groupName}
+              onChange={handleInputChange}
+              placeholder="Enter group name"
+              className="w-full px-4 py-3 bg-white/50 border border-gray-200/50 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all duration-200"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="groupDescription" className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+              <div className="p-1.5 bg-blue-500/10 rounded-lg">
+                <MdMessage className="w-4 h-4 text-blue-600" />
               </div>
-            </form>
+              Description
+            </label>
+            <textarea
+              id="groupDescription"
+              name="groupDescription"
+              value={newGroup.groupDescription}
+              onChange={handleInputChange}
+              placeholder="What's this group about?"
+              rows={3}
+              className="w-full px-4 py-3 bg-white/50 border border-gray-200/50 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all duration-200 resize-none"
+            />
           </div>
         </div>
-      )}
+        <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-gray-100/50">
+          <button
+            type="button"
+            onClick={() => setShowCreateModal(false)}
+            className="px-5 py-2.5 text-gray-600 hover:text-gray-800 font-medium rounded-xl hover:bg-gray-100/50 transition-all duration-200"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={createGroupMutation.isPending}
+            className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-blue-500/25"
+          >
+            {createGroupMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" />
+                Create Group
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
 
-      {/* Add Member Modal */}
-      {showAddMemberModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-auto overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-500 to-emerald-600">
-              <h3 className="text-xl font-bold text-white flex items-center">
-                <UserPlus className="w-6 h-6 mr-2" />
+    {/* Add Member Modal */}
+{showAddMemberModal && (
+  <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 w-full max-w-md mx-auto overflow-hidden">
+      <div className="flex items-center justify-between p-6 border-b border-gray-100/50">
+        <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2.5">
+          <div className="p-2 bg-green-500/10 rounded-xl">
+            <UserPlus className="w-5 h-5 text-green-600" />
+          </div>
+          Add Member
+        </h3>
+        <button
+          onClick={() => setShowAddMemberModal(false)}
+          className="p-2 rounded-xl hover:bg-gray-100/50 transition-colors duration-200"
+        >
+          <X className="w-5 h-5 text-gray-500" />
+        </button>
+      </div>
+      <form onSubmit={handleAddMember} className="p-6">
+        <div className="space-y-5">
+          <div className="bg-gradient-to-r from-blue-50/80 to-indigo-50/80 border border-blue-200/50 rounded-2xl p-4 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-semibold text-sm shadow-lg">
+                {getGroupInitials(selectedGroup?.groupName)}
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-900">{selectedGroup?.groupName}</h4>
+                <p className="text-sm text-gray-600">Adding member to this group</p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label htmlFor="newMemberUserId" className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+              <div className="p-1.5 bg-green-500/10 rounded-lg">
+                <UserPlus className="w-4 h-4 text-green-600" />
+              </div>
+              User ID *
+            </label>
+            <input
+              type="text"
+              id="newMemberUserId"
+              value={newMemberUserId}
+              onChange={(e) => setNewMemberUserId(e.target.value)}
+              placeholder="Enter user ID to add"
+              className="w-full px-4 py-3 bg-white/50 border border-gray-200/50 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500/50 transition-all duration-200"
+              required
+            />
+            <p className="text-xs text-gray-500 mt-2 ml-1">
+              Enter the exact User ID of the person you want to add to this group.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-gray-100/50">
+          <button
+            type="button"
+            onClick={() => setShowAddMemberModal(false)}
+            className="px-5 py-2.5 text-gray-600 hover:text-gray-800 font-medium rounded-xl hover:bg-gray-100/50 transition-all duration-200"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={addMemberMutation.isPending}
+            className="px-6 py-2.5 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-green-500/25"
+          >
+            {addMemberMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Adding...
+              </>
+            ) : (
+              <>
+                <UserPlus className="w-4 h-4" />
                 Add Member
-              </h3>
-              <button
-                onClick={() => setShowAddMemberModal(false)}
-                className="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
-              >
-                <X className="w-6 h-6 text-white" />
-              </button>
-            </div>
-            <form onSubmit={handleAddMember} className="p-6">
-              <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-semibold text-sm mr-3">
-                      {getGroupInitials(selectedGroup?.groupName)}
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">{selectedGroup?.groupName}</h4>
-                      <p className="text-sm text-gray-600">Adding member to this group</p>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="newMemberUserId" className="block text-sm font-medium text-gray-700 mb-2">
-                    User ID *
-                  </label>
-                  <input
-                    type="text"
-                    id="newMemberUserId"
-                    value={newMemberUserId}
-                    onChange={(e) => setNewMemberUserId(e.target.value)}
-                    placeholder="Enter user ID to add"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Enter the exact User ID of the person you want to add to this group.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={() => setShowAddMemberModal(false)}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={addMemberMutation.isPending}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                >
-                  {addMemberMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Adding...
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Add Member
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
+              </>
+            )}
+          </button>
         </div>
-      )}
-
+      </form>
+    </div>
+  </div>
+)}
       {/* Mobile Sidebar Overlay */}
       {showMobileSidebar && (
         <div

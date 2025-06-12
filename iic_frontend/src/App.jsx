@@ -7,14 +7,15 @@ import { useUser } from "@clerk/clerk-react";
 import useUserStore from "./Zustand/UserStore";
 import Navbar from "./MainComponnets/Navbar";
 import PostVaccancy from "./MainComponnets/PostVaccancy";
-import JobApplication from "./Comps/JobApplications";
 import { Toaster } from "sonner";
 import Trial from "./MainComponnets/trial";
 import ChatApp from "./ChatApp";
-import TestCard from "./TestCard";
 import HomeMaker from './HomeMakerHome';
 import Trends from './trends';
 import ShareCode from "./ShareCode";
+import VideoCall from "./VideoCall";
+import HomeMakerDashboard from "./HomeMakerDashboard";
+import MentorSection from "./Mentor";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -96,12 +97,13 @@ function AppRoutes() {
           <Route path="/register-usr" element={<LazyRegister />} />
           <Route path="/verify-usr" element={<LazyVerifyId />} />
           <Route path="/vaccancy-post" element={<PostVaccancy />} />
-          <Route path="/posts" element={<JobApplication />} />
           <Route path="/chat" element={<ChatApp />} />
-          <Route path="/test" element={<TestCard />} />
           <Route path="/home/:type" element={<HomeMaker />} />
           <Route path="/latestTrends" element={<Trends />} />
           <Route path='/code' element={<ShareCode/>}/>
+          <Route path='/call/:random' element={<VideoCall/>}/>
+          <Route path ='/house_wife' element={<HomeMakerDashboard/>}/>
+          <Route path ='/mentor' element={<MentorSection/>}/>
         </Routes>
       </Suspense>
     </>
